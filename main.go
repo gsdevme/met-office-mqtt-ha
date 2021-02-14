@@ -27,5 +27,5 @@ func main() {
 		log.Println(err)
 	}
 
-	fmt.Println(forecast.Location.Name)
+	fmt.Println(forecast.DayPeriod)
 }

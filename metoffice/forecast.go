@@ -4,29 +4,34 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 )
 
 type Forecast struct {
-	FeelsLikeTemperature string
-	Temperature string
-	Weather string
-	PrecipitationProbability int
+	FeelsLikeTemperature string `json:"F"`
+	Temperature string `json:"T"`
+	Humidity string `json:"H"`
+	Weather string `json:"W"`
+	PrecipitationProbability string `json:"Pp"`
+	WindSpeed string `json:"S"`
+	WindGuest string `json:"G"`
+	UVIndex string `json:"U"`
+	Visibility string `json:"V"`
+	WindDirection string `json:"D"`
 }
 
 type DayPeriod struct {
-
+	Type string `json:"type"`
+	Date string `json:"value"`
+	Rep []Forecast `json:"Rep"`
 }
 
 type WeatherLocation struct {
 	Name string `json:"name"`
-}
-
-type Weather struct {
-	Type string `json:"type"`
-	DataDate string `json:"dataDate"`
-	Location WeatherLocation `json:"Location"`
+	Country string `json:"country"`
+	DayPeriod []DayPeriod `json:"Period"`
 }
 
 type Config struct {
@@ -34,26 +39,15 @@ type Config struct {
 	LocationId int
 }
 
-func GetForecast(c Config) (*Weather, error) {
+func GetForecast(c Config) (*WeatherLocation, error) {
 	var url = fmt.Sprintf("http://datapoint.metoffice.gov.uk/public/data/val/wxfcs/regionalforecast/json/%d?res=3hourly&key=%s", c.LocationId, c.ApiKey)
 
 	body, err := doRequest(url)
 
-	var raw map[string]json.RawMessage
+	result := gjson.Get(string(body), "SiteRep.DV.Location")
+	var w *WeatherLocation
 
-	err = json.Unmarshal(body, &raw)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(raw["SiteRep"], &raw)
-	if err != nil {
-		return nil, err
-	}
-
-	var w *Weather
-
-	err = json.Unmarshal(raw["DV"], &w)
+	err = json.Unmarshal([]byte(result.String()), &w)
 
 	return w, err
 }
